@@ -17,12 +17,10 @@ from utils import Load
 import sys
 from src.meta_heuristic.script_many_metaheuristics import eval_model, dual_eval
 
-device = torch.device('cuda:'+str(DEVICE) if torch.cuda.is_available() else 'cpu')
-
-if device == "cpu":
-    print("cannot train with cpu")
-    exit(0)
-
+if DEVICE != 'cpu':
+    device = torch.device('cuda:'+str(DEVICE) if torch.cuda.is_available() else 'cpu')
+else:
+    device = torch.device('cpu')
 
 def create_agent(state_size, action_size, actor_fc1_units=64,
                  actor_fc2_units=32, actor_lr=1e-3, critic_fc1_units=32,

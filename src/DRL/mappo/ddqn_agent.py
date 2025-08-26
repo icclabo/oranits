@@ -10,8 +10,10 @@ import time
 from threading import Lock, active_count
 from configs.systemcfg import DEVICE, GLOBAL_SEED
 
-
-device = torch.device('cuda:'+str(DEVICE) if torch.cuda.is_available() else 'cpu')
+if DEVICE != 'cpu':
+    device = torch.device('cuda:'+str(DEVICE) if torch.cuda.is_available() else 'cpu')
+else:
+    device = torch.device('cpu')
 if device == 'cpu':
     print("cannot train with cpu")
     exit(0)

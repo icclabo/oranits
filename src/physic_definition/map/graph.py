@@ -5,75 +5,76 @@ import heapq
 
 class Graph:
     def __init__(self, segs):
-        #segs: List of segments
-        self.__ngr = {} # non-direct graph
-        self.__gr = {}
-        # visited = []
-        # print(len(segs))
+        self.__ngr = {} 
+        self.__gr = {}  
+
         for s in segs:
-            seg_data= s.get_segment()
-            self.__gr[seg_data[0]] = [s]
-            self.__ngr[seg_data[0]] = [s]
-            for s_ in segs:
-                seg_data_= s_.get_segment()
-                if s_!=s and seg_data_[0] == seg_data[0]:
-                    self.__gr[seg_data[0]].append(s_)
-                    self.__ngr[seg_data[0]].append(s_)
-        for s in segs:
-            seg_data= s.get_segment()
-            if seg_data[1] not in self.__ngr.keys():
-                self.__ngr[seg_data[1]] = [s]
-            for s_ in segs:
-                seg_data_= s_.get_segment()
-                if s_!=s and seg_data_[1] == seg_data[1]:
-                    self.__ngr[seg_data[1]].append(s_)
+            st, ed, *_ = s.get_segment()  
+            self.__ngr.setdefault(st, []).append(s)
+            self.__ngr.setdefault(ed, []).append(s) 
+            self.__gr.setdefault(st, []).append(s)   
+
         print("finish build a graph from segment information")
     
     def get_vertexes(self, direction = False):
         if direction:
             return self.__gr.keys()
         return self.__ngr.keys()
-    
-    def dijkstra(self, pnt1 :Point, pnt2:Point):
-        vertexes = self.__ngr.keys()
-        dijkstra_ = {}
-        for ver in  vertexes:
-            dijkstra_[ver] = (float('inf'), "n") #khoảng cách bao xa, và đường đi là gì
-        dijkstra_[pnt1] = (0, pnt1)
-        queue = [pnt1]
 
-        visited = []
-        while(queue):
-            cur_chkpnt = queue.pop(0)
-            if cur_chkpnt in visited:
+    def dijkstra(self, pnt1: Point, pnt2: Point, directed: bool = False):
+        if pnt1 not in self.__ngr or pnt2 not in self.__ngr:
+            raise ValueError("Start or end point is not in the graph.")
+
+        INF = float('inf')
+        dist = {v: INF for v in self.__ngr.keys()}
+        prev = {v: None for v in self.__ngr.keys()}
+        hop = {}
+
+        dist[pnt1] = 0.0
+        hop[pnt1] = 0
+        pq = [(0.0, 0, pnt1)]
+
+        while pq:
+            cur_dist, cur_hop, u = heapq.heappop(pq)
+            if cur_dist != dist[u] or cur_hop != hop.get(u, cur_hop):
                 continue
-            edges = self.__ngr[cur_chkpnt]
-            for ed in edges:
-                pnt = ed.get_segment()
-                if pnt[0] == cur_chkpnt:
-                    queue.append(pnt[1])
-                    pnt_vl = dijkstra_[cur_chkpnt][0] + ed.get_long()
-                    if(dijkstra_[pnt[1]][0] > pnt_vl):
-                        dijkstra_[pnt[1]] = (pnt_vl,cur_chkpnt)
-                elif pnt[1] == cur_chkpnt:
-                    queue.append(pnt[0])
-                    pnt_vl = dijkstra_[cur_chkpnt][0] + ed.get_long()
-                    if(dijkstra_[pnt[0]][0] > pnt_vl):
-                        dijkstra_[pnt[0]] = (pnt_vl,cur_chkpnt)
-            visited.append(cur_chkpnt)
-        paths = [pnt2]
-        checkpnt = pnt2
-        cnt = 0
-        self.__minlong = dijkstra_[pnt2]
-        while(checkpnt!= pnt1):
-            checkpnt = dijkstra_[checkpnt][1]
-            if checkpnt not in paths:
-                paths.insert(0, checkpnt)
-            cnt += 1
-            if cnt > len(dijkstra_):
-                raise ValueError("the input point in the map is in correct")
-            
-        return paths
+            if u == pnt2:
+                break
+
+            for ed in self.__ngr[u]:
+                st, edp, line, status, sid = ed.get_segment()
+                if u != st and u != edp:
+                    continue
+                neighbors = []
+                if u == st:
+                    neighbors.append(edp)        
+                if not directed and u == edp:
+                    neighbors.append(st)          
+                w = ed.get_long()
+                if w < 0:
+                    raise ValueError(f"Negative weight not supported {w}")
+                for v in neighbors:
+                    alt = cur_dist + w
+                    new_hop = cur_hop + 1
+                    if alt < dist[v] or (alt == dist[v] and new_hop < hop.get(v, INF)):
+                        dist[v] = alt
+                        prev[v] = u
+                        hop[v] = new_hop
+                        heapq.heappush(pq, (alt, new_hop, v))
+
+        if dist[pnt2] == INF:
+            raise ValueError("No path exists between the given points.")
+
+        # reconstruct
+        path = []
+        node = pnt2
+        while node is not None:
+            path.insert(0, node)
+            node = prev[node]
+
+        self.__minlong = (dist[pnt2], f"{pnt2.get_point()}")
+        return path
+    
     def get_min_long(self):
         return self.__minlong
     def get_graph(self, type = 'N'):

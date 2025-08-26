@@ -239,8 +239,8 @@ class Map:
             self.make_map()
         elif not map_cfg['real_map']:
             self.load_map()
-        self.build()
         self.hmap_updated = False
+        self.build()
         # self.buid_distance_map()
     
     def load_map(self):
@@ -305,6 +305,7 @@ class Map:
             self.__segments = seg_
             self.__road_infor = road_infor_change
             self.__intersection_l = list(all_intersections)
+            self.hmap_updated = True
     
     def buid_distance_map(self):
         gr = Graph(self.__segments)

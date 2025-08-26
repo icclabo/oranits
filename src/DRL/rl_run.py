@@ -19,7 +19,10 @@ import torch.nn as nn
 import matplotlib
 # matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-device = torch.device('cuda:'+str(DEVICE) if torch.cuda.is_available() else 'cpu')
+if DEVICE != 'cpu':
+    device = torch.device('cuda:'+str(DEVICE) if torch.cuda.is_available() else 'cpu')
+else:
+    device = torch.device('cpu')
 if device == "cpu":
     print("cannot train with cpu")
     exit(0)
